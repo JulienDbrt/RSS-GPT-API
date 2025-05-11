@@ -2,10 +2,10 @@ import os
 import openai
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
-DEFAULT_SUMMARY_LENGTH = int(os.environ.get("SUMMARY_LENGTH", 200))
-DEFAULT_KEYWORD_COUNT = int(os.environ.get("KEYWORD_COUNT", 5))
-DEFAULT_LANGUAGE = os.environ.get("SUMMARY_LANGUAGE", "en")
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
+DEFAULT_SUMMARY_LENGTH = int(os.environ.get("SUMMARY_LENGTH", 250))
+DEFAULT_KEYWORD_COUNT = int(os.environ.get("KEYWORD_COUNT", 6))
+DEFAULT_LANGUAGE = os.environ.get("SUMMARY_LANGUAGE", "fr")
 
 def summarize_article(
     content: str,
