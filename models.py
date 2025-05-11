@@ -29,7 +29,7 @@ class Article(Base):
     id = Column(Integer, primary_key=True)
     source_id = Column(Integer, ForeignKey("sources.id"), nullable=False)
     title = Column(String, nullable=False)
-    url = Column(String, nullable=False)
+    url = Column(String, nullable=False, index=True)
     published_at = Column(DateTime)
     content = Column(Text)
     summary = Column(Text)

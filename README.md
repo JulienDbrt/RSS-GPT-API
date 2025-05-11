@@ -55,10 +55,10 @@ This project supports automated article summarization and keyword extraction usi
    Export your OpenAI API key (and optionally, model and language) in your shell or systemd/cron environment:
    ```sh
    export OPENAI_API_KEY=your_openai_api_key
-   export OPENAI_MODEL=gpt-4o           # Optional, default: gpt-4o
-   export SUMMARY_LANGUAGE=en           # Optional, default: en
-   export SUMMARY_LENGTH=200            # Optional, default: 200
-   export KEYWORD_COUNT=5               # Optional, default: 5
+   export OPENAI_MODEL=gpt-4.1-mini     # Optional, default: gpt-4.1-mini
+   export SUMMARY_LANGUAGE=fr           # Optional, default: fr
+   export SUMMARY_LENGTH=250            # Optional, default: 250
+   export KEYWORD_COUNT=6               # Optional, default: 6
    ```
 
 3. **Manual Run**
@@ -121,7 +121,6 @@ rss-gpt/
 ├── schemas.py           # Pydantic models
 ├── fetch_articles.py    # Cron-capable fetcher
 ├── init_db.py
-├── config.ini
 └── requirements.txt
 ```
 
@@ -129,13 +128,23 @@ rss-gpt/
 
 ## Configuration
 
-| Key              | Default                 | Description                           |
-| ---------------- | ----------------------- | ------------------------------------- |
-| `DB_URL`         | `sqlite:///rssgpt.db`   | SQLAlchemy URL                        |
-| `FETCH_INTERVAL` | *None*                  | If set, the fetcher loops every N sec |
-| `OPENAI_API_KEY` | *env* var / `.env` file | For downstream AI usage               |
+All configuration is handled via environment variables. Example:
 
-> **Tip:** Copy `config.ini.example` to `config.ini` and tweak as needed.
+```sh
+export DB_URL=sqlite:///rssgpt.db
+export OPENAI_API_KEY=your_openai_api_key
+export OPENAI_MODEL=gpt-4.1-mini
+export SUMMARY_LANGUAGE=fr
+export SUMMARY_LENGTH=250
+export KEYWORD_COUNT=6
+```
+
+- `DB_URL`: SQLAlchemy URL (default: `sqlite:///rssgpt.db`)
+- `OPENAI_API_KEY`: Your OpenAI API key (required)
+- `OPENAI_MODEL`: OpenAI model to use (default: `gpt-4.1-mini`)
+- `SUMMARY_LANGUAGE`: Language for summaries (default: `fr`)
+- `SUMMARY_LENGTH`: Target summary length in words (default: `250`)
+- `KEYWORD_COUNT`: Number of keywords to extract (default: `6`)
 
 ---
 

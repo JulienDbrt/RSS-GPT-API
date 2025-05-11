@@ -1,12 +1,13 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel
+from models import SourceStatusEnum
 
 class SourceBase(BaseModel):
     name: str
     url: str
     max_items: int = 10
-    status: str = "active"
+    status: SourceStatusEnum = SourceStatusEnum.ACTIVE
 
 class SourceCreate(SourceBase):
     pass
@@ -15,15 +16,14 @@ class SourceUpdate(BaseModel):
     name: Optional[str] = None
     url: Optional[str] = None
     max_items: Optional[int] = None
-    status: Optional[str] = None
+    status: Optional[SourceStatusEnum] = None
 
 class SourceOut(SourceBase):
     id: int
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 class ArticleOut(BaseModel):
     id: int
     source_id: int
@@ -36,5 +36,4 @@ class ArticleOut(BaseModel):
     language: Optional[str]
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
