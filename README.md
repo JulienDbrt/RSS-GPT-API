@@ -13,15 +13,16 @@ A lightweight **FastAPI** backend that aggregates RSS feeds, stores articles, an
 ## Table of Contents <!-- omit in toc -->
 1. [Features](#features)
 2. [Quick Start](#quick-start)
-3. [Project Structure](#project-structure)
-4. [Configuration](#configuration)
-5. [Using PostgreSQL](#using-postgresql)
-6. [API Reference](#api-reference)
-7. [System Diagram](#system-diagram)
-8. [Security Notes](#security-notes)
-9. [Roadmap](#roadmap)
-10. [Contributing](#contributing)
-11. [License](#license)
+3. [AI Summarization with OpenAI](#ai-summarization-with-openai)
+4. [Project Structure](#project-structure)
+5. [Configuration](#configuration)
+6. [Using PostgreSQL](#using-postgresql)
+7. [API Reference](#api-reference)
+8. [System Diagram](#system-diagram)
+9. [Security Notes](#security-notes)
+10. [Roadmap](#roadmap)
+11. [Contributing](#contributing)
+12. [License](#license)
 
 ---
 
@@ -29,6 +30,7 @@ A lightweight **FastAPI** backend that aggregates RSS feeds, stores articles, an
 - **FastAPI** with automatic interactive docs at `/docs`.
 - **SQLite** out-of-the-box, optional **PostgreSQL** support.
 - Periodic RSS fetcher script (cron-friendly).
+- **AI-powered article summarization and keyword extraction using OpenAI** (scheduled every 12 hours).
 - Simple daily digest endpoint.
 - Modular routers (`/sources`, `/articles`).
 - Typed models with **Pydantic**.
@@ -37,6 +39,52 @@ A lightweight **FastAPI** backend that aggregates RSS feeds, stores articles, an
 ---
 
 ## Quick Start
+
+---
+
+## AI Summarization with OpenAI
+
+This project supports automated article summarization and keyword extraction using OpenAI's GPT models. Every 12 hours, a batch job fetches new RSS articles, generates summaries and keywords, and stores them in the database.
+
+### Setup
+
+1. **Obtain an OpenAI API Key**
+   Sign up at [OpenAI](https://platform.openai.com/account/api-keys) and create an API key.
+
+2. **Set Environment Variables**
+   Export your OpenAI API key (and optionally, model and language) in your shell or systemd/cron environment:
+   ```sh
+   export OPENAI_API_KEY=your_openai_api_key
+   export OPENAI_MODEL=gpt-4o           # Optional, default: gpt-4o
+   export SUMMARY_LANGUAGE=en           # Optional, default: en
+   export SUMMARY_LENGTH=200            # Optional, default: 200
+   export KEYWORD_COUNT=5               # Optional, default: 5
+   ```
+
+3. **Manual Run**
+   To fetch and summarize articles manually:
+   ```sh
+   python3 fetch_articles.py
+   ```
+
+4. **Scheduled Run (Every 12 Hours)**
+   Use the provided script and add this line to your crontab:
+   ```sh
+   0 */12 * * * /path/to/your/project/run_fetch_articles.sh
+   ```
+   Make sure to set environment variables in your crontab or source them in the script.
+
+5. **How it Works**
+   - The [`llm_summarizer.py`](llm_summarizer.py) module calls OpenAI to generate summaries and keywords for each new article.
+   - The [`fetch_articles.py`](fetch_articles.py) script fetches RSS feeds, processes new articles, and stores the results in the database.
+   - Summaries and keywords are available via the API.
+
+6. **API Output**
+   Article objects returned by the API include `summary`, `keywords`, and `language` fields.
+
+---
+
+## Project Structure
 
 ```bash
 # 1 Clone

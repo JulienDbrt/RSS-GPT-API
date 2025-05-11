@@ -3,6 +3,10 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import Source, Article
 from datetime import datetime
+from llm_summarizer import summarize_article
+import os
+
+DEFAULT_LANGUAGE = os.environ.get("SUMMARY_LANGUAGE", "en")
 
 def fetch_and_store_articles():
     db: Session = SessionLocal()
@@ -15,15 +19,21 @@ def fetch_and_store_articles():
             exists = db.query(Article).filter(Article.url == entry.link).first()
             if exists:
                 continue
+            content = getattr(entry, "summary", None)
+            # Summarize and extract keywords using OpenAI
+            summary, keywords = summarize_article(
+                content or "",
+                language=DEFAULT_LANGUAGE
+            )
             article = Article(
                 source_id=source.id,
                 title=getattr(entry, "title", "Untitled"),
                 url=getattr(entry, "link", ""),
                 published_at=parse_datetime(getattr(entry, "published", None)),
-                content=getattr(entry, "summary", None),
-                summary=None,
-                keywords=None,
-                language=None,
+                content=content,
+                summary=summary,
+                keywords=keywords,
+                language=DEFAULT_LANGUAGE,
                 created_at=datetime.utcnow()
             )
             db.add(article)
