@@ -2,12 +2,13 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./rssgpt.db")
+# Allow both DB_URL (as documented) and DATABASE_URL for backward compatibility
+DB_URL = os.getenv("DB_URL") or os.getenv("DATABASE_URL") or "sqlite:///./rssgpt.db"
 
 engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {},
-    echo=True
+    DB_URL,
+    connect_args={"check_same_thread": False} if DB_URL.startswith("sqlite") else {},
+    echo=True,
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
