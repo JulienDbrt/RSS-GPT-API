@@ -33,7 +33,7 @@ A lightweight **FastAPI** backend that aggregates RSS feeds, stores articles, an
 - **AI-powered article summarization and keyword extraction using OpenAI** (scheduled every 12 hours).
 - Simple daily digest endpoint.
 - Modular routers (`/sources`, `/articles`).
-- Typed models with **Pydantic**.
+- Typed models with **Pydantic (v2)**.
 - One-command setup (see below).
 
 ---
@@ -199,6 +199,7 @@ graph TD
     API --> ArticlesRouter
     SourcesRouter --> DB[(SQLite/PostgreSQL)]
     ArticlesRouter --> DB
+    ArticlesRouter -->|Summarize| OpenAI
 ```
 
 ---
