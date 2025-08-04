@@ -19,7 +19,7 @@ def create_source(source: SourceCreate, db: Session = Depends(get_db)):
     if existing_source:
         raise HTTPException(status_code=409, detail="Source with this URL already exists")
 
-    db_source = Source(**source.dict())
+    db_source = Source(**source.model_dump())
     db.add(db_source)
     db.commit()
     db.refresh(db_source)
@@ -30,7 +30,8 @@ def update_source(source_id: int, source: SourceUpdate, db: Session = Depends(ge
     db_source = db.query(Source).filter(Source.id == source_id).first()
     if not db_source:
         raise HTTPException(status_code=404, detail="Source not found")
-    for key, value in source.dict(exclude_unset=True).items():
+    update_data = source.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
         setattr(db_source, key, value)
     db.commit()
     db.refresh(db_source)

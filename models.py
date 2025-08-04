@@ -1,5 +1,5 @@
 import enum
-from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.sql import func
 
