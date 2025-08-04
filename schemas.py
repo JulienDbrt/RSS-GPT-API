@@ -24,6 +24,7 @@ class SourceOut(SourceBase):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
 class ArticleOut(BaseModel):
     id: int
     source_id: int
