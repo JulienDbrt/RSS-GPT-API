@@ -1,6 +1,23 @@
-import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-DEFAULT_LANGUAGE = os.environ.get("SUMMARY_LANGUAGE", "fr")
-OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4.1-mini")
-DEFAULT_SUMMARY_LENGTH = int(os.environ.get("SUMMARY_LENGTH", 250))
-DEFAULT_KEYWORD_COUNT = int(os.environ.get("KEYWORD_COUNT", 6))
+class Settings(BaseSettings):
+    # Charge les variables depuis un fichier .env si présent
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding='utf-8')
+
+    # Base de données
+    DATABASE_URL: str = "sqlite:///./rssgpt.db"
+    DB_ECHO: bool = False # Contrôle le echo de SQLAlchemy
+
+    # OpenAI
+    OPENAI_API_KEY: str
+    OPENAI_MODEL: str = "gpt-4-turbo-preview"
+
+    # Logique de l'application
+    SUMMARY_LANGUAGE: str = "fr"
+    SUMMARY_LENGTH: int = 250
+    KEYWORD_COUNT: int = 6
+
+    # Sécurité
+    API_KEY: str
+
+settings = Settings()
