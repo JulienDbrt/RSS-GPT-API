@@ -14,37 +14,39 @@ from config import settings
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Set OpenAI API key
-openai.api_key = settings.OPENAI_API_KEY
+# Configure OpenAI client
+client = openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
 
-async def get_summary_and_keywords(content: str) -> (str, str):
-    """Asks OpenAI for a summary and keywords."""
-    if not content:
+async def get_summary_and_keywords(content: str) -> tuple[str | None, str | None]:
+    """Asks OpenAI for a summary and keywords asynchronously."""
+    if not content or len(content.strip()) < 50:
+        logging.warning("Content too short to summarize, skipping.")
         return None, None
 
     prompt = f"""
-    Voici un article. Analyse-le et fournis les éléments suivants :
-    1.  Un résumé concis et neutre en {settings.SUMMARY_LANGUAGE} d'environ {settings.SUMMARY_LENGTH} mots.
-    2.  Une liste de {settings.KEYWORD_COUNT} mots-clés pertinents, séparés par des virgules.
+    Analyze the following article and provide:
+    1. A concise, neutral summary in {settings.SUMMARY_LANGUAGE}, approximately {settings.SUMMARY_LENGTH} words long.
+    2. A list of {settings.KEYWORD_COUNT} relevant keywords, separated by commas.
 
-    Le format de ta réponse DOIT être :
-    RÉSUMÉ: [Ton résumé ici]
-    MOTS-CLÉS: [Tes mots-clés ici]
+    Your response MUST be in this exact format, with no other text:
+    SUMMARY: [Your summary here]
+    KEYWORDS: [Your keywords here]
 
     ARTICLE:
     {content[:8000]}
-    """ # Truncate content to fit model context window
+    """
 
     try:
-        response = await openai.chat.completions.create(
+        response = await client.chat.completions.create(
             model=settings.OPENAI_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
+            timeout=90.0
         )
         raw_text = response.choices[0].message.content
 
-        summary = raw_text.split("RÉSUMÉ:")[1].split("MOTS-CLÉS:")[0].strip()
-        keywords = raw_text.split("MOTS-CLÉS:")[1].strip()
+        summary = raw_text.split("SUMMARY:")[1].split("KEYWORDS:")[0].strip()
+        keywords = raw_text.split("KEYWORDS:")[1].strip()
         return summary, keywords
     except Exception as e:
         logging.error(f"OpenAI API call failed: {e}")
@@ -54,55 +56,60 @@ async def process_feed(source: Source, db: Session):
     """Fetches a single RSS feed, processes entries, and saves them."""
     logging.info(f"Processing source: {source.name} ({source.url})")
     try:
-        feed = feedparser.parse(source.url)
+        feed = await asyncio.to_thread(feedparser.parse, source.url)
         if feed.bozo:
-            raise ValueError(f"Feed parsing error: {feed.bozo_exception}")
+            raise ValueError(f"Feed parsing error: {getattr(feed, 'bozo_exception', 'Unknown error')}")
 
         source.last_fetched_at = datetime.utcnow()
 
+        new_articles_count = 0
         for entry in feed.entries[:source.max_items]:
             article_url = entry.link
 
-            # Check if article already exists
-            existing_article = db.execute(select(Article).where(Article.url == article_url)).first()
-            if existing_article:
+            # Check if article already exists using a more efficient query
+            stmt = select(Article.id).where(Article.url == article_url).limit(1)
+            if db.execute(stmt).first():
                 continue
 
-            # Extract content
-            content = entry.get("content", [{}])[0].get("value", entry.get("summary", ""))
+            content = ""
+            if 'content' in entry and entry.content:
+                content = entry.content[0].value
+            if not content and 'summary' in entry:
+                content = entry.summary
 
-            # Get summary and keywords from AI
             summary, keywords = await get_summary_and_keywords(content)
 
-            if not summary:
-                logging.warning(f"Could not generate summary for article: {entry.title}, saving without summary.")
+            if not summary or not keywords:
+                logging.warning(f"Could not generate summary/keywords for: {entry.title}")
+                continue
 
-            # Create new article
             new_article = Article(
                 source_id=source.id,
                 title=entry.title,
                 url=article_url,
-                published_at=parse_date(entry.published) if hasattr(entry, 'published') else datetime.utcnow(),
+                published_at=parse_date(entry.published) if 'published' in entry else datetime.utcnow(),
                 content=content,
                 summary=summary,
                 keywords=keywords,
                 language=settings.SUMMARY_LANGUAGE,
             )
             db.add(new_article)
-            logging.info(f"  -> Added article: {entry.title}")
+            new_articles_count += 1
 
         source.status = SourceStatusEnum.ACTIVE
         db.commit()
+        logging.info(f"  -> Source '{source.name}' processed. Added {new_articles_count} new articles.")
 
     except Exception as e:
         logging.error(f"Failed to process source {source.name}: {e}")
         source.status = SourceStatusEnum.ERROR
+        db.rollback()
+        db.query(Source).filter(Source.id == source.id).update({"status": SourceStatusEnum.ERROR})
         db.commit()
-
 
 async def main():
     """Main function to run the fetching process."""
-    logging.info("Starting article fetching process...")
+    logging.info("--- Starting article fetching process ---")
     db = SessionLocal()
     try:
         active_sources = db.execute(
@@ -114,10 +121,7 @@ async def main():
 
     finally:
         db.close()
-    logging.info("Article fetching process finished.")
+    logging.info("--- Article fetching process finished ---")
 
 if __name__ == "__main__":
-    # Ensure OPENAI_API_KEY is loaded, e.g., from .env file
-    # from dotenv import load_dotenv
-    # load_dotenv()
     asyncio.run(main())
