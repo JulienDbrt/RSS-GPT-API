@@ -13,7 +13,9 @@ router = APIRouter(prefix="/articles", tags=["articles"])
 def list_articles(
     db: Session = Depends(get_db),
     source_id: Optional[int] = None,
-    day: Optional[date] = Query(None, description="Filter by publication date (YYYY-MM-DD)")
+    day: Optional[date] = Query(None, description="Filter by publication date (YYYY-MM-DD)"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500) # Limite raisonnable
 ):
     query = db.query(Article)
     if source_id:
@@ -22,4 +24,5 @@ def list_articles(
         start = datetime.combine(day, datetime.min.time())
         end = datetime.combine(day, datetime.max.time())
         query = query.filter(Article.published_at >= start, Article.published_at <= end)
-    return query.order_by(Article.published_at.desc()).all()
+
+    return query.order_by(Article.published_at.desc()).offset(skip).limit(limit).all()

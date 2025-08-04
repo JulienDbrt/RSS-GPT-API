@@ -9,13 +9,13 @@ import logging
 
 from database import SessionLocal
 from models import Source, Article, SourceStatusEnum
-from config import OPENAI_MODEL, DEFAULT_LANGUAGE, DEFAULT_SUMMARY_LENGTH, DEFAULT_KEYWORD_COUNT
+from config import settings
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Ensure your OPENAI_API_KEY is set as an environment variable
-# openai.api_key = os.getenv("OPENAI_API_KEY")
+# Set OpenAI API key
+openai.api_key = settings.OPENAI_API_KEY
 
 async def get_summary_and_keywords(content: str) -> (str, str):
     """Asks OpenAI for a summary and keywords."""
@@ -24,8 +24,8 @@ async def get_summary_and_keywords(content: str) -> (str, str):
 
     prompt = f"""
     Voici un article. Analyse-le et fournis les éléments suivants :
-    1.  Un résumé concis et neutre en {DEFAULT_LANGUAGE} d'environ {DEFAULT_SUMMARY_LENGTH} mots.
-    2.  Une liste de {DEFAULT_KEYWORD_COUNT} mots-clés pertinents, séparés par des virgules.
+    1.  Un résumé concis et neutre en {settings.SUMMARY_LANGUAGE} d'environ {settings.SUMMARY_LENGTH} mots.
+    2.  Une liste de {settings.KEYWORD_COUNT} mots-clés pertinents, séparés par des virgules.
 
     Le format de ta réponse DOIT être :
     RÉSUMÉ: [Ton résumé ici]
@@ -37,7 +37,7 @@ async def get_summary_and_keywords(content: str) -> (str, str):
 
     try:
         response = await openai.chat.completions.create(
-            model=OPENAI_MODEL,
+            model=settings.OPENAI_MODEL,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.2,
         )
@@ -86,7 +86,7 @@ async def process_feed(source: Source, db: Session):
                 content=content,
                 summary=summary,
                 keywords=keywords,
-                language=DEFAULT_LANGUAGE,
+                language=settings.SUMMARY_LANGUAGE,
             )
             db.add(new_article)
             logging.info(f"  -> Added article: {entry.title}")

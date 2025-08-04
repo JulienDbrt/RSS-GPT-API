@@ -28,14 +28,15 @@ class Article(Base):
     __tablename__ = "articles"
 
     id = Column(Integer, primary_key=True)
-    source_id = Column(Integer, ForeignKey("sources.id"), nullable=False)
+    source_id = Column(Integer, ForeignKey("sources.id"), nullable=False, index=True)
     title = Column(String(1024), nullable=False)
     url = Column(String(2048), nullable=False, unique=True)
-    published_at = Column(DateTime)
+    published_at = Column(DateTime, index=True)
     content = Column(Text)
     summary = Column(Text)
     keywords = Column(String(255))
     language = Column(String(10))
     created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     source = relationship("Source", back_populates="articles")

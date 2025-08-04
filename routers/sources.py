@@ -5,6 +5,7 @@ from typing import List
 from database import get_db
 from models import Source
 from schemas import SourceCreate, SourceUpdate, SourceOut
+from security import get_api_key
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
@@ -12,15 +13,19 @@ router = APIRouter(prefix="/sources", tags=["sources"])
 def list_sources(db: Session = Depends(get_db)):
     return db.query(Source).all()
 
-@router.post("/", response_model=SourceOut)
+@router.post("/", response_model=SourceOut, dependencies=[Depends(get_api_key)])
 def create_source(source: SourceCreate, db: Session = Depends(get_db)):
+    existing_source = db.query(Source).filter(Source.url == source.url).first()
+    if existing_source:
+        raise HTTPException(status_code=409, detail="Source with this URL already exists")
+
     db_source = Source(**source.dict())
     db.add(db_source)
     db.commit()
     db.refresh(db_source)
     return db_source
 
-@router.put("/{source_id}", response_model=SourceOut)
+@router.put("/{source_id}", response_model=SourceOut, dependencies=[Depends(get_api_key)])
 def update_source(source_id: int, source: SourceUpdate, db: Session = Depends(get_db)):
     db_source = db.query(Source).filter(Source.id == source_id).first()
     if not db_source:
@@ -31,7 +36,7 @@ def update_source(source_id: int, source: SourceUpdate, db: Session = Depends(ge
     db.refresh(db_source)
     return db_source
 
-@router.delete("/{source_id}", response_model=dict)
+@router.delete("/{source_id}", response_model=dict, dependencies=[Depends(get_api_key)])
 def delete_source(source_id: int, db: Session = Depends(get_db)):
     db_source = db.query(Source).filter(Source.id == source_id).first()
     if not db_source:
