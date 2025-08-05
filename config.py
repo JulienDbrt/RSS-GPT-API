@@ -20,4 +20,8 @@ class Settings(BaseSettings):
     # Sécurité
     API_KEY: str
 
+    # Configuration Redis pour ARQ
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+
 settings = Settings()
